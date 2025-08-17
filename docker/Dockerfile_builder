@@ -1,0 +1,13 @@
+ARG MAVEN_VERSION="4.0.0-rc-4"
+FROM ghcr.io/graalvm/jdk-community:latest
+ARG MAVEN_VERSION
+RUN microdnf update; \
+    microdnf upgrade; \
+    microdnf -y install patch gcc gcc-c++ yum zlib-devel; \
+    microdnf clean all
+RUN curl -o apache-maven-${MAVEN_VERSION}-bin.tar.gz https://dlcdn.apache.org/maven/maven-4/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz ; \
+    tar -xvzf apache-maven-${MAVEN_VERSION}-bin.tar.gz -C / ; \
+    rm -f apache-maven-${MAVEN_VERSION}-bin.tar.gz ;
+ENV MAVEN_HOME=/apache-maven-${MAVEN_VERSION}
+ENV PATH=$PATH:$JAVA_HOME/bin:$MAVEN_HOME/bin
+LABEL org.opencontainers.image.source=https://github.com/XenoAmess/graalvm-maven-builder
