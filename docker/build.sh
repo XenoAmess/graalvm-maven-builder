@@ -1,4 +1,4 @@
-docker pull ghcr.io/graalvm/native-image-community:latest
+docker pull ghcr.io/graalvm/native-image-community:25.0.0-ol9
 export version=$(date "+%Y%m%d_%H%M%S")
 echo ${version}
 export tag=ghcr.io/xenoamess/graalvm-maven-builder:0.0.1.${version}
