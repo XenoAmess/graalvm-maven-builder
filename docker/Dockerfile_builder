@@ -1,5 +1,5 @@
 ARG MAVEN_VERSION="4.0.0-rc-4"
-FROM ghcr.io/graalvm/native-image-community:latest
+FROM ghcr.io/graalvm/native-image-community:25.0.0-ol9
 ARG MAVEN_VERSION
 RUN microdnf update; \
     microdnf upgrade; \
