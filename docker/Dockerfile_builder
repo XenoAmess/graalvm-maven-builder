@@ -1,13 +1,31 @@
-ARG MAVEN_VERSION="4.0.0-rc-4"
-FROM ghcr.io/graalvm/native-image-community:25.0.0-ol9
-ARG MAVEN_VERSION
-RUN microdnf update; \
-    microdnf upgrade; \
-    microdnf -y install patch gcc gcc-c++ yum zlib-devel; \
-    microdnf clean all
-RUN curl -o apache-maven-${MAVEN_VERSION}-bin.tar.gz https://dlcdn.apache.org/maven/maven-4/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz ; \
-    tar -xvzf apache-maven-${MAVEN_VERSION}-bin.tar.gz -C / ; \
-    rm -f apache-maven-${MAVEN_VERSION}-bin.tar.gz ;
-ENV MAVEN_HOME=/apache-maven-${MAVEN_VERSION}
-ENV PATH=$PATH:$JAVA_HOME/bin:$MAVEN_HOME/bin
+# Builder toolchain image: GraalVM JDK 21 + Maven on Ubuntu 26.04
+# Used as the builder-stage base image for native builds (e.g. http-service-spliter).
+FROM ubuntu:26.04
+
+ARG MAVEN_VERSION=3.9.16
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget tar gzip ca-certificates build-essential \
+    zlib1g-dev libzstd-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install GraalVM JDK 21 (includes native-image)
+RUN wget -q https://download.oracle.com/graalvm/21/latest/graalvm-jdk-21_linux-x64_bin.tar.gz \
+    && mkdir /opt/graalvm \
+    && tar -xzf graalvm-jdk-21_linux-x64_bin.tar.gz -C /opt/graalvm --strip-components=1 \
+    && rm graalvm-jdk-21_linux-x64_bin.tar.gz
+
+ENV JAVA_HOME=/opt/graalvm
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
+# Install Maven (download path picks maven-3/ or maven-4/ from the version prefix)
+# and verify the whole toolchain, failing the build early if anything is off
+RUN MAVEN_MAJOR="${MAVEN_VERSION%%.*}"; \
+    wget -q "https://archive.apache.org/dist/maven/maven-${MAVEN_MAJOR}/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" \
+    && tar -xzf "apache-maven-${MAVEN_VERSION}-bin.tar.gz" -C /opt \
+    && ln -s "/opt/apache-maven-${MAVEN_VERSION}/bin/mvn" /usr/bin/mvn \
+    && rm "apache-maven-${MAVEN_VERSION}-bin.tar.gz" \
+    && java -version && native-image --version && mvn -version
+
 LABEL org.opencontainers.image.source=https://github.com/XenoAmess/graalvm-maven-builder
