@@ -26,6 +26,8 @@ RUN MAVEN_MAJOR="${MAVEN_VERSION%%.*}"; \
     && tar -xzf "apache-maven-${MAVEN_VERSION}-bin.tar.gz" -C /opt \
     && ln -s "/opt/apache-maven-${MAVEN_VERSION}/bin/mvn" /usr/bin/mvn \
     && rm "apache-maven-${MAVEN_VERSION}-bin.tar.gz" \
+    && perl -0pi -e 's|\s*<mirror>\s*<id>maven-default-http-blocker</id>.*?</mirror>\s*||s' "/opt/apache-maven-${MAVEN_VERSION}/conf/settings.xml" \
+    && ! grep -q maven-default-http-blocker "/opt/apache-maven-${MAVEN_VERSION}/conf/settings.xml" \
     && java -version && native-image --version && mvn -version
 
 LABEL org.opencontainers.image.source=https://github.com/XenoAmess/graalvm-maven-builder
